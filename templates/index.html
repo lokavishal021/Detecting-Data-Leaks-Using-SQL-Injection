@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Secure SQLi Protection System</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="A lightweight cloud-based secure data protection system demonstrating dual-layer SQL Injection defense, AES-256-GCM encryption, and capability-based authorization.">
+    <meta name="author" content="Antigravity Security Team">
+    
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Navigation / Header Bar -->
+    <header class="app-header">
+        <div class="brand">
+            <i class="fa-solid fa-shield-halved logo-icon"></i>
+            <span class="brand-text">AEGIS <span class="accent-text">SECURE</span></span>
+        </div>
+        <div class="header-nav">
+            <span class="status-indicator-badge" id="protection-status">
+                <i class="fa-solid fa-circle-check"></i> Layer 1 & 2 Active
+            </span>
+            <div class="user-session-info" id="session-info">
+                <!-- Logged in details injected here -->
+                <span class="anon-user"><i class="fa-solid fa-user-secret"></i> Anonymous (Simulator Mode)</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- App Main Container -->
+    <main class="app-container">
+        
+        <!-- Auth Overlay Panel (If not logged in) -->
+        <section id="auth-section" class="card auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <div class="auth-form-container">
+                <h2 id="auth-title">System Access</h2>
+                <p class="auth-subtitle">Access your secure AES-256 cloud database vault.</p>
+                
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)">
+                    <div class="form-group">
+                        <label for="auth-username"><i class="fa-solid fa-user"></i> Username</label>
+                        <input type="text" id="auth-username" required placeholder="Enter username..." autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password"><i class="fa-solid fa-lock"></i> Password</label>
+                        <input type="password" id="auth-password" required placeholder="Enter password...">
+                    </div>
+                    <div class="form-error" id="auth-error-msg"></div>
+                    <button type="submit" class="btn btn-primary" id="auth-btn">Authenticate</button>
+                </form>
+                <div class="auth-demo-note">
+                    <p><i class="fa-solid fa-circle-info"></i> Registering automatically seeds default Capability Codes for your account.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Dashboard View (Hidden until authenticated, but simulator works sandbox anyway) -->
+        <section id="dashboard-section" class="dashboard-grid">
+            
+            <!-- COLUMN 1: Top Security Configuration Panel -->
+            <div class="card security-config-panel col-span-full">
+                <div class="config-header">
+                    <h3><i class="fa-solid fa-sliders"></i> Security Posture Control Console</h3>
+                    <span class="pulse-indicator"></span>
+                </div>
+                <div class="toggles-grid">
+                    <!-- Layer 1 WAF Toggle -->
+                    <div class="toggle-control">
+                        <div class="toggle-label-group">
+                            <span class="layer-badge layer-1">L1</span>
+                            <span class="toggle-title">SQLi Threat Filter (WAF)</span>
+                            <span class="toggle-desc">Detects & intercepts SQLi signatures</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-waf" checked onchange="updateSystemStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Layer 2 Parameterization Toggle -->
+                    <div class="toggle-control">
+                        <div class="toggle-label-group">
+                            <span class="layer-badge layer-2">L2</span>
+                            <span class="toggle-title">Parameterized Queries</span>
+                            <span class="toggle-desc">Prepared Statements for binding inputs</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-parameterized" checked onchange="updateSystemStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Layer 2 AES-256 Toggle -->
+                    <div class="toggle-control">
+                        <div class="toggle-label-group">
+                            <span class="layer-badge layer-2">L2</span>
+                            <span class="toggle-title">AES-256 Decryption</span>
+                            <span class="toggle-desc">Decrypts ciphertext for authorized output</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-decryption" checked onchange="updateSystemStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Layer 2 Capability Code Toggle -->
+                    <div class="toggle-control">
+                        <div class="toggle-label-group">
+                            <span class="layer-badge layer-2">L2</span>
+                            <span class="toggle-title">Capability Authorization</span>
+                            <span class="toggle-desc">Requires unique action capability codes</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-capability" checked onchange="updateSystemStatus()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: SQL Injection Simulator (Main Academic Showcase) -->
+            <div class="card simulator-card">
+                <div class="card-header flex-between">
+                    <h3><i class="fa-solid fa-terminal"></i> Interactive SQLi Simulator</h3>
+                    <button class="btn btn-sm btn-outline" onclick="loadSamplePayload('tautology')">Load Payload</button>
+                </div>
+                <div class="card-body">
+                    <p class="section-description">Test queries against the cloud database vault directly using the posture configured above.</p>
+                    
+                    <div class="form-group">
+                        <label for="sim-capability"><i class="fa-solid fa-key"></i> Capability Code (Optional if bypassed)</label>
+                        <div class="input-action-group">
+                            <input type="text" id="sim-capability" placeholder="Paste CAP-READ-XXXX code here...">
+                            <button class="btn btn-outline-btn" onclick="autofillCapCode('read')"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto</button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sim-payload"><i class="fa-solid fa-terminal"></i> Search / Injection Payload</label>
+                        <input type="text" id="sim-payload" placeholder="e.g. Grades, or SQL Injection payload...">
+                    </div>
+                    
+                    <div class="payload-suggestions flex-gap">
+                        <span class="suggestion-tag" onclick="loadSamplePayload('normal')">Normal Search</span>
+                        <span class="suggestion-tag" onclick="loadSamplePayload('tautology')">' OR '1'='1</span>
+                        <span class="suggestion-tag" onclick="loadSamplePayload('union')">UNION SELECT</span>
+                        <span class="suggestion-tag" onclick="loadSamplePayload('stack')">Stacked Queries</span>
+                    </div>
+
+                    <button class="btn btn-danger btn-full margin-top-md" id="sim-btn" onclick="runSimulation()">
+                        <i class="fa-solid fa-play"></i> Execute Query String
+                    </button>
+
+                    <!-- Terminal Output Window -->
+                    <div class="terminal-container margin-top-lg">
+                        <div class="terminal-header">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                            <span class="terminal-title">Database SQL execution path</span>
+                        </div>
+                        <div class="terminal-body" id="sim-terminal">
+                            <div class="terminal-line system-msg">Aegis Secure Sandbox SQL Engine version 1.0.0.</div>
+                            <div class="terminal-line system-msg">Ready for attack vectors...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 3: Real Database Vault & Live Capabilities -->
+            <div class="flex-column-gap">
+                <!-- Capabilities Console -->
+                <div class="card capabilities-card">
+                    <div class="card-header flex-between">
+                        <h3><i class="fa-solid fa-fingerprint"></i> Capability Tokens</h3>
+                        <button class="btn btn-sm btn-primary" onclick="generateNewCapCode()"><i class="fa-solid fa-plus"></i> Mint Code</button>
+                    </div>
+                    <div class="card-body scroll-y max-height-200">
+                        <div class="capabilities-list" id="cap-tokens-list">
+                            <!-- Tokens injected here -->
+                            <div class="empty-state">Logging in seeds user capabilities...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Vault Operations -->
+                <div class="card vault-card">
+                    <div class="card-header">
+                        <h3><i class="fa-solid fa-box-archive"></i> Secure Vault Storage</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Add Vault Item Form -->
+                        <div class="vault-adder accordion">
+                            <h4 onclick="toggleAccordion('vault-add-form')"><i class="fa-solid fa-plus-circle"></i> Add Sensitive Record <i class="fa-solid fa-chevron-down accordion-arrow"></i></h4>
+                            <div id="vault-add-form" class="accordion-content hidden">
+                                <div class="form-group margin-top-sm">
+                                    <label><i class="fa-solid fa-key"></i> Write Capability Code</label>
+                                    <div class="input-action-group">
+                                        <input type="text" id="vault-write-cap" placeholder="CAP-WRITE-XXXX...">
+                                        <button class="btn btn-sm" onclick="autofillCapCode('write')">Auto</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Record Name</label>
+                                    <input type="text" id="vault-title" placeholder="e.g. WiFi Password, Medical Report">
+                                </div>
+                                <div class="form-group">
+                                    <label>Sensitive Plaintext Content (Will be AES-256-GCM encrypted)</label>
+                                    <input type="text" id="vault-content" placeholder="Top secret data...">
+                                </div>
+                                <button class="btn btn-primary btn-sm margin-top-xs" onclick="addVaultItem()">Encrypt & Save</button>
+                            </div>
+                        </div>
+
+                        <!-- Real Vault Listing -->
+                        <div class="vault-items-section margin-top-md">
+                            <div class="flex-between">
+                                <h4><i class="fa-solid fa-database"></i> Records (AES Secure Store)</h4>
+                                <button class="btn btn-sm btn-outline-btn" onclick="fetchVaultItems()"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+                            </div>
+                            <div class="form-group margin-top-xs">
+                                <input type="text" id="vault-read-cap" placeholder="Provide CAP-READ-XXXX to fetch/search...">
+                            </div>
+                            <div class="vault-items-list" id="vault-items-list">
+                                <!-- Injected data list -->
+                                <div class="empty-state">Provide a read capability code and click refresh.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 4: Live SOC Logging & Statistics Console -->
+            <div class="card soc-card col-span-full">
+                <div class="card-header flex-between">
+                    <div class="flex-align-center gap-sm">
+                        <h3><i class="fa-solid fa-server"></i> Security Operations Center (SOC) Alert Logs</h3>
+                        <span class="live-tag">LIVE</span>
+                    </div>
+                    <div class="soc-actions">
+                        <button class="btn btn-sm btn-outline" onclick="fetchSecurityLogs()"><i class="fa-solid fa-sync"></i> Refresh Logs</button>
+                        <button class="btn btn-sm btn-danger-outline" onclick="clearSecurityLogs()"><i class="fa-solid fa-trash-can"></i> Clear Logs</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="soc-stats flex-gap margin-bottom-md">
+                        <div class="stat-card">
+                            <span class="stat-label">Total Threats Blocks</span>
+                            <span class="stat-value text-red" id="stat-total-blocks">0</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">Max Threat Level</span>
+                            <span class="stat-value text-yellow" id="stat-max-score">0 / 5</span>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-label">System Threat Level</span>
+                            <span class="stat-value text-green" id="stat-status">SAFE</span>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="soc-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>User</th>
+                                    <th>Client IP</th>
+                                    <th>Analyzed Request / Payload</th>
+                                    <th>Threat Score</th>
+                                    <th>Action Taken</th>
+                                </tr>
+                            </thead>
+                            <tbody id="soc-logs-table-body">
+                                <tr>
+                                    <td colspan="6" class="table-empty">No security incidents logged. Simulate attacks above.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <p>Aegis Cloud Secure Data Protection Platform © 2026. Design Guidelines: Glassmorphism / Cyber-Dark Architecture.</p>
+    </footer>
+
+    <!-- App Logic Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

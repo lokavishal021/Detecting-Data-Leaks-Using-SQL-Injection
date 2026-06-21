@@ -70,11 +70,6 @@ Troubleshooting
 - If the server doesn't start, verify you ran commands from the project root and your virtual environment has the dependencies installed.
 - On Windows, long OneDrive paths or spaces don't normally block execution, but make sure the current directory is readable and writable.
 
-Contributing / Next steps
-- If you'd like, I can also:
-  - Add a `requirements-dev.txt` and GitHub Actions workflow for tests.
-  - Harden the README with API examples and a Postman collection.
-  - Add a `Makefile` or PowerShell script for common dev tasks.
 
 License
 
